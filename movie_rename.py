@@ -22,6 +22,7 @@ class Stats:
         self.skipped_no_year = []
         self.skipped_no_results = []
         self.user_skipped_files = []
+        self.success_files = []
         self.success_count = 0
         self.skipped_count = 0
 
@@ -32,7 +33,8 @@ class Stats:
         self.skipped_files.append(file)
         self.skipped_count += 1
 
-    def success(self):
+    def success(self, file):
+        self.success_files.append(file)
         self.success_count += 1
 
 class MovieFile:
@@ -209,18 +211,18 @@ def apply_rename(movie, new_name, dry_run, stats):
 
     if dry_run:
         stats.log(f"{movie.filename} -> {new_name}")
-        stats.success()
+        stats.success(new_name)
         return
 
     if os.path.exists(target_path):
         stats.log(f"Skipping '{movie.filename}': target already exists")
-        stats.skip(movie.filename)
+        stats.skip(new_name)
         return
 
     os.rename(movie.full_path, target_path)
 
     stats.log(f"Renamed '{movie.filename}' -> '{new_name}'")
-    stats.success()
+    stats.success(new_name)
 
 def normalize_files(folder, dry_run=True):
     stats = Stats()
@@ -275,6 +277,10 @@ def write_log(folder, stats):
     with open(log_path, "w", encoding="utf-8") as f:
         f.write(f"Movie folder processed: {folder}\n")
         f.write(f"Results: Success {stats.success_count}, Skipped {stats.skipped_count}\n\n")
+
+        f.write("\nSuccessfully Renamed files (if not dry-run):\n")
+        for s in stats.success_files:
+            f.write(f"- {s}\n")
 
         f.write("\nSkipped Filename Clean Failure:\n")
         for s in stats.skipped_no_year:
