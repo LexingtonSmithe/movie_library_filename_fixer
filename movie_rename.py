@@ -55,6 +55,11 @@ def clean_filename(filename):
     cleaned = re.sub(r'[\._]', ' ', name).strip()
     return cleaned, ext
 
+def sanitize_filename(name):
+    # Replace illegal Windows characters with dash or space
+    return re.sub(r'[<>:"/\\|?*]', ' -', name)
+
+
 def strip_release_info(name):
     # Replace dots/underscores with spaces
     name = re.sub(r'[._()]', ' ', name)
@@ -77,41 +82,6 @@ def strip_release_info(name):
         title = ' '.join(title_parts).strip()
         
     return title, year
-    
-def search_tmdb(title):
-    url = "https://api.themoviedb.org/3/search/movie"
-    params = {"api_key": TMDB_API_KEY, "query": title}
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-    data = response.json()
-    return data.get("results", [])
-
-def filter_results_by_year(results, year):
-    if year is None:
-        return results
-    return [r for r in results if r.get("release_date", "").startswith(str(year))]
-
-def prompt_user_for_choice(results, title, year):
-    year = year or "?"
-    print(f"\n\nMultiple results found for '{title}'" + (f" ({year})" if year else ""))
-    for idx, r in enumerate(results, start=1):
-        r_year = r.get("release_date", "????")[:4]
-        print(f"{idx}. {r['title']} ({r_year})")
-    print("0. Skip this file")
-
-    while True:
-        choice = input("Choose a result to accept (number): ").strip()
-        if choice.isdigit():
-            choice = int(choice)
-            if choice == 0:
-                return None
-            elif 1 <= choice <= len(results):
-                return results[choice - 1]
-        print("Invalid input, try again.")
-
-def sanitize_filename(name):
-    # Replace illegal Windows characters with dash or space
-    return re.sub(r'[<>:"/\\|?*]', ' -', name)
 
 def should_skip_file(movie, stats):
 
@@ -133,16 +103,34 @@ def should_skip_file(movie, stats):
     return False
 
 def search_movie(movie, stats):
+    url = "https://api.themoviedb.org/3/search/movie"
+    params = {"api_key": TMDB_API_KEY, "query": movie.title}
 
     try:
         stats.log(f"Searching for title: '{movie.title}'")
-        results = search_tmdb(movie.title)
+
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+
+        data = response.json()
+        results = data.get("results", [])
+
         stats.log(f"Found {len(results)} result(s) for title '{movie.title}'")
+
         return results
 
     except requests.RequestException as e:
         stats.log(f"TMDB query failed for '{movie.title}': {e}")
         return None
+
+    except Exception as e:
+        stats.log(f"Error searching for '{movie.title}': {e}")
+        return None
+
+def filter_results_by_year(results, year):
+    if year is None:
+        return results
+    return [r for r in results if r.get("release_date", "").startswith(str(year))]
 
 def resolve_movie_match(results, movie, stats):
     filtered_results = filter_results_by_year(results, movie.year)
@@ -171,6 +159,24 @@ def resolve_movie_match(results, movie, stats):
         stats.skipped_no_results.append(f"{movie.title} ({movie.year})")
         stats.skip(movie.filename)
         return None
+
+def prompt_user_for_choice(results, title, year):
+    year = year or "?"
+    print(f"\n\nMultiple results found for '{title}'" + (f" ({year})" if year else ""))
+    for idx, r in enumerate(results, start=1):
+        r_year = r.get("release_date", "????")[:4]
+        print(f"{idx}. {r['title']} ({r_year})")
+    print("0. Skip this file")
+
+    while True:
+        choice = input("Choose a result to accept (number): ").strip()
+        if choice.isdigit():
+            choice = int(choice)
+            if choice == 0:
+                return None
+            elif 1 <= choice <= len(results):
+                return results[choice - 1]
+        print("Invalid input, try again.")
 
 def apply_rename(movie, new_name, dry_run, stats):
 
