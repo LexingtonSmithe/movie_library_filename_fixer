@@ -55,7 +55,7 @@ def clean_filename(filename):
 
 def strip_release_info(name):
     # Replace dots/underscores with spaces
-    name = re.sub(r'[._]', ' ', name)
+    name = re.sub(r'[._()]', ' ', name)
     parts = name.split()
     title_parts = []
     year = ""
