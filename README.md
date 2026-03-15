@@ -78,7 +78,7 @@ Logs what will change without renaming anything:
 
 Actually rename the files:
 
-``` python movie_renamer.py /path/to/movies --apply ```
+``` python movie_rename.py /path/to/movies --apply ```
 
 ---
 
