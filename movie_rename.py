@@ -93,7 +93,7 @@ def filter_results_by_year(results, year):
 
 def prompt_user_for_choice(results, title, year):
     year = year or "?"
-    print(f"\nMultiple results found for '{title}'" + (f" ({year})" if year else ""))
+    print(f"\n\nMultiple results found for '{title}'" + (f" ({year})" if year else ""))
     for idx, r in enumerate(results, start=1):
         r_year = r.get("release_date", "????")[:4]
         print(f"{idx}. {r['title']} ({r_year})")
@@ -145,66 +145,33 @@ def search_movie(movie, stats):
         return None
 
 def resolve_movie_match(results, movie, stats):
+    filtered_results = filter_results_by_year(results, movie.year)
 
-    if movie.year:
-        filtered = filter_results_by_year(results, movie.year)
+    if len(filtered_results) == 1:
+        match = filtered_results[0]
+        new_name = f"{match['title']} ({movie.year}){movie.ext}"
+        stats.log(f"Match found for: {new_name}")
+        return new_name
 
-        if len(filtered) == 1:
-            match = filtered[0]
-            new_name = f"{match['title']} ({movie.year}){movie.ext}"
-            stats.log(f"Match found for: {new_name}")
-            return new_name
+    elif len(filtered_results) > 1:
+        match = prompt_user_for_choice(filtered_results, movie.title, movie.year)
 
-        elif len(filtered) > 1:
-            match = prompt_user_for_choice(filtered, movie.title, movie.year)
-
-            if match is None:
-                stats.log(
-                    f"Skipping '{movie.filename}': User couldn't decide"
-                )
-                stats.user_skipped_files.append(movie.title)
-                stats.skip(movie.filename)
-                return None
-
-            new_name = f"{match['title']} ({movie.year}){movie.ext}"
-            stats.log(f"Match found for: {new_name}")
-            return new_name
-
-        else:
-            stats.log(f"Skipping '{movie.filename}': no results using year {movie.year}")
-            stats.skipped_no_results.append(f"{movie.title} ({movie.year})")
+        if match is None:
+            stats.log(f"Skipping '{movie.filename}': user couldn't decide")
+            stats.user_skipped_files.append(movie.title)
             stats.skip(movie.filename)
             return None
+
+        new_name = f"{match['title']} ({movie.year}){movie.ext}"
+        stats.log(f"Match found for: {new_name}")
+        return new_name
 
     else:
+        stats.log(f"Skipping '{movie.filename}': no results using year {movie.year}")
+        stats.skipped_no_results.append(f"{movie.title} ({movie.year})")
+        stats.skip(movie.filename)
+        return None
 
-        if len(results) == 1:
-            match = results[0]
-            match_year = match.get("release_date", "????")[:4]
-            new_name = f"{match['title']} ({match_year}){movie.ext}"
-            stats.log(f"Match found for: {new_name}")
-            return new_name
-
-        elif len(results) > 1:
-            match = prompt_user_for_choice(results, movie.title, None)
-
-            if match is None:
-                stats.log(f"Skipping - User Skipped - '{movie.filename}'")
-                stats.user_skipped_files.append(movie.title)
-                stats.skip(movie.filename)
-                return None
-
-            match_year = match.get("release_date", "????")[:4]
-            new_name = f"{match['title']} ({match_year}){movie.ext}"
-            stats.log(f"Match found for: {new_name}")
-            return new_name
-
-        else:
-            stats.log(f"Skipping '{movie.filename}': no results and no year")
-            stats.skipped_no_year.append(movie.filename)
-            stats.skip(movie.filename)
-            return None
-        
 def apply_rename(movie, new_name, dry_run, stats):
 
     target_path = movie.target_path(new_name)
