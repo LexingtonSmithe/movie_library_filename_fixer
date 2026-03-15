@@ -43,16 +43,6 @@ pip install -r requirements.txt
 ---
 
 # ⚙️ Setup
-
-Clone the repository:
-
-```
-git clone https://github.com/yourusername/tmdb-movie-renamer.git
-cd tmdb-movie-renamer
-```
-
----
-
 ## Create your environment file:
 
 ```
@@ -65,20 +55,21 @@ Edit `.env` and add your API key:
 
 # Usage
 
-Place the script in the folder containing your movies, or run it against a directory.
-
 ## Dry run (recommended)
 
 Logs what will change without renaming anything:
 
 ```python movie_rename.py /path/to/movies```
 
+See movie_rename.log once run for a breakdown of the run 
 
 ## Apply changes
 
 Actually rename the files:
 
-``` python movie_renamer.py /path/to/movies --apply ```
+``` python movie_rename.py /path/to/movies --apply ```
+
+See movie_rename.log once run for a breakdown of the run
 
 ---
 
