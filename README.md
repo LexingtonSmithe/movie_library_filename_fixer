@@ -63,14 +63,14 @@ Logs what will change without renaming anything:
 
 See movie_rename.log once run for a breakdown of the run 
 
-
 ## Apply changes
 
 Actually rename the files:
 
 ``` python movie_rename.py /path/to/movies --apply ```
 
-See movie_rename.log once run for a breakdown of the run 
+See movie_rename.log once run for a breakdown of the run
+
 ---
 
 #  Notes
