@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+movie_rename.log
+todo.txt
+venv/
